@@ -67,6 +67,7 @@ def estrutura(d: dict) -> list[tuple[str, bool]]:
 
 TEMAS = {
     "Claro (roxo)": ("#faf7ff", "#1f1535", "#4b2a8a", "#e3d9f5"),
+    "Arte de rua": ("#fffefb", "#000000", "#c4006d", "#ffe600"),
     "Alto contraste": ("#ffffff", "#000000", "#00338d", "#000000"),
 }
 
