@@ -9,12 +9,10 @@ Como funciona (RAG simplificado):
    Nos dois casos a FONTE é sempre citada.
 """
 import json
-import os
 import unicodedata
-from datetime import date
 from pathlib import Path
 
-import pandas as pd
+import ia
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 
@@ -74,44 +72,14 @@ class Motor:
         return "\n\n---\n\n".join(partes), fontes, False
 
     def _gerar_com_ia(self, pergunta, achados, token):
-        try:
-            from huggingface_hub import InferenceClient
-
-            modelo = os.getenv("MODELO_HF", "Qwen/Qwen2.5-7B-Instruct")
-            contexto = "\n\n".join(f"[{d['fonte']}] {d['texto']}" for d, _ in achados)
-            sistema = (
-                "Você é o ArteConecta IA, assistente para artistas independentes do Brasil. "
-                "Responda em português simples, curto e acolhedor. Use APENAS o contexto "
-                "fornecido. Se o contexto não responder, diga que não sabe e sugira procurar "
-                "a Secretaria de Cultura. Nunca invente datas, valores ou leis. "
-                "Lembre que a pessoa deve confirmar prazos e regras na fonte oficial."
-            )
-            cliente = InferenceClient(model=modelo, token=token)
-            r = cliente.chat_completion(
-                messages=[
-                    {"role": "system", "content": sistema},
-                    {"role": "user", "content": f"Contexto:\n{contexto}\n\nPergunta: {pergunta}"},
-                ],
-                max_tokens=500,
-                temperature=0.2,
-            )
-            return r.choices[0].message.content.strip()
-        except Exception:
-            return None  # qualquer falha -> cai no plano B
+        contexto = "\n\n".join(f"[{d['fonte']}] {d['texto']}" for d, _ in achados)
+        sistema = (
+            "Você é o ArteConecta IA, assistente para artistas independentes do Brasil. "
+            "Responda em português simples, curto e acolhedor. Use APENAS o contexto "
+            "fornecido. Se o contexto não responder, diga que não sabe e sugira procurar "
+            "a Secretaria de Cultura. Nunca invente datas, valores ou leis. "
+            "Lembre que a pessoa deve confirmar prazos e regras na fonte oficial."
+        )
+        return ia.gerar(token, sistema, f"Contexto:\n{contexto}\n\nPergunta: {pergunta}", 500)
 
 
-def carregar_editais() -> pd.DataFrame:
-    df = pd.read_csv(PASTA / "editais.csv")
-    df["prazo"] = pd.to_datetime(df["prazo"]).dt.date
-    df["situacao"] = df["prazo"].apply(lambda d: "Aberto" if d >= date.today() else "Encerrado")
-    return df
-
-
-def filtrar_editais(df, estado="Todos", area="Todas", so_abertos=True):
-    if estado != "Todos":
-        df = df[df["estado"].isin([estado, "Nacional"])]
-    if area != "Todas":
-        df = df[df["area"].isin([area, "Todas as áreas"])]
-    if so_abertos:
-        df = df[df["situacao"] == "Aberto"]
-    return df.sort_values("prazo")

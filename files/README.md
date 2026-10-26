@@ -1,32 +1,50 @@
-# ArteConecta IA - Protótipo
+# ArteConecta IA - protótipo v2
 
-Chatbot + busca de editais + guias educativos para artistas independentes.
+Plataforma para artistas independentes: do "não sei por onde começar" até a candidatura preparada.
 
-## Estrutura
-- `app.py` - interface (Streamlit)
-- `motor.py` - busca nos documentos (RAG) + resposta com fonte
-- `dados/base_conhecimento.json` - textos sobre direitos e oportunidades
-- `dados/editais.csv` - editais (OS ATUAIS SÃO EXEMPLOS FICTÍCIOS)
+## Abas
+| Aba | O que faz | Precisa de IA? |
+|---|---|---|
+| 🏠 Início | Perfil, próximo passo, oportunidades compatíveis, candidaturas, sugestões de colaboração | Não |
+| 🧭 Primeiro passo | Plano de tarefas por regras, com justificativa ligada às respostas do perfil | Não |
+| 📡 Radar | Filtros, estado da informação, compatibilidade explicada e checklist "Caminho até a oportunidade" | Não |
+| 📄 Tradutor | Edital colado/PDF → trechos por tema com página, datas, valores, tarefas e perguntas ao documento | Opcional (resumo simples) |
+| 🖼️ Portfólio | Formulário → apresentação e biografia editáveis → HTML para baixar (imprimir como PDF) | Opcional (reescrita) |
+| 📚 Aprender | 17 guias por tema e nível, com tipo de fonte | Não |
+| 💬 Pergunte | Busca nos guias, sempre com fonte | Opcional |
+| 🤝 Comunidade | Pedidos de colaboração, filtros, denúncia, bloqueio, dicas contra golpe | Não |
 
-## Rodar no seu computador
+## Arquivos
+- `app.py` interface | `motor.py` busca nos guias | `oportunidades.py` filtros, datas e compatibilidade
+- `plano.py` primeiro passo | `caminho.py` checklist | `tradutor.py` editais | `portfolio.py` portfólio
+- `comunidade.py` | `estado.py` salvar/continuar | `ia.py` único ponto de contato com IA externa
+- `dados/` oportunidades.csv (FICTÍCIAS), base_conhecimento.json, edital_exemplo.txt
+- `tests/test_logica.py` testes da lógica
+
+## Rodar
 ```
 pip install -r requirements.txt
 streamlit run app.py
+python tests/test_logica.py
 ```
 
-## Publicar grátis (Streamlit Community Cloud)
-1. Crie uma conta em github.com e um repositório público; suba estes arquivos.
-2. Entre em share.streamlit.io, faça login com o GitHub e clique em "Create app".
-3. Escolha o repositório e o arquivo `app.py`, e clique em Deploy.
+## IA opcional (Hugging Face)
+1. Gere um token de leitura em huggingface.co (Settings > Access Tokens).
+2. Streamlit Cloud: App > Settings > Secrets: `HF_TOKEN = "hf_..."` (nunca coloque o token no código ou no GitHub).
+3. No app, marque "Permitir IA externa" na barra lateral. Sem essa autorização, nenhum texto é enviado.
+4. Modelo padrão: `Qwen/Qwen2.5-7B-Instruct` (troque com a variável `MODELO_HF`). Confira licença e limites de uso do modelo e do plano gratuito.
 
-## Ligar a IA generativa (opcional)
-1. Crie conta em huggingface.co e gere um token de leitura (Settings > Access Tokens).
-2. No Streamlit Cloud: App > Settings > Secrets, e escreva:
-   `HF_TOKEN = "seu_token_aqui"`
-3. Para trocar o modelo, defina a variável `MODELO_HF` (padrão: Qwen/Qwen2.5-7B-Instruct).
-Sem token, o app funciona normalmente mostrando os trechos das fontes.
+## Como usar oportunidades REAIS
+Edite `dados/oportunidades.csv` (uma linha por oportunidade). Campos importantes:
+- `status_base`: `verificada` (você conferiu na fonte), `pendente` ou `exemplo`.
+- `ultima_verificacao`: data (AAAA-MM-DD) em que você conferiu. Passados 30 dias, o app marca como "Desatualizada".
+- `documentos`: separe por `;`. `link` e `fonte`: use só o endereço oficial.
+Nunca marque `verificada` sem abrir a fonte.
 
-## Antes de apresentar
-- Troque os editais de exemplo por editais REAIS da sua cidade (edite `dados/editais.csv`).
-- Confira cada texto da base de conhecimento na fonte oficial.
-- Adicione mais documentos ao `base_conhecimento.json` (titulo, fonte, texto).
+## Limitações atuais
+- Oportunidades são exemplos fictícios. Não há coleta automática.
+- Sem banco de dados e sem contas: o progresso só persiste se o usuário baixar o arquivo (botão na barra lateral). A comunidade existe só na sessão de cada pessoa.
+- Sem mapa de espaços culturais (Etapa 3).
+- Tradutor: busca por palavras, não por significado. Pode errar em editais com redação muito diferente. PDFs escaneados não são lidos.
+- Portfólio: exporta HTML; PDF via impressão do navegador; sem link público.
+- Compatibilidade e plano são regras simples, não IA.
