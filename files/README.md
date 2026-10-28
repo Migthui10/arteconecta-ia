@@ -14,10 +14,13 @@ Plataforma para artistas independentes: do "não sei por onde começar" até a c
 | 💬 Pergunte | Busca nos guias, sempre com fonte | Opcional |
 | 🤝 Comunidade | Pedidos de colaboração, filtros, denúncia, bloqueio, dicas contra golpe | Não |
 
+## Visual
+Tema "arte de rua" (lambe-lambe em parede de concreto) em `tema.py`. Só aparência: para mudar cores, edite as variáveis no topo do CSS. Requer Streamlit 1.40 ou mais novo (já no `requirements.txt`).
+
 ## Arquivos
 - `app.py` interface | `motor.py` busca nos guias | `oportunidades.py` filtros, datas e compatibilidade
 - `plano.py` primeiro passo | `caminho.py` checklist | `tradutor.py` editais | `portfolio.py` portfólio
-- `comunidade.py` | `estado.py` salvar/continuar | `ia.py` único ponto de contato com IA externa
+- `tema.py` visual | `comunidade.py` | `estado.py` salvar/continuar | `ia.py` único ponto de contato com IA externa
 - `dados/` oportunidades.csv (FICTÍCIAS), base_conhecimento.json, edital_exemplo.txt
 - `tests/test_logica.py` testes da lógica
 

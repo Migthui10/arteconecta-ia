@@ -16,23 +16,14 @@ import estado
 import oportunidades as op
 import plano as pl
 import portfolio as pf
+import tema
 import tradutor as tr
 from motor import Motor
 
 st.set_page_config(page_title="ArteConecta IA", page_icon="🎨", layout="centered")
 
-st.markdown(
-    """
-    <style>
-      .stApp { background-color: #faf7ff; color: #1f1535; }
-      h1, h2, h3 { color: #4b2a8a; }
-      .stButton>button, .stDownloadButton>button { border-radius: 20px; min-height: 44px; border: 1px solid #4b2a8a; }
-      [data-testid="stCaptionContainer"], .stCaption { color: #4a3a6a !important; }
-      @media (max-width: 640px) { .block-container { padding: 1rem 0.8rem !important; } h1 { font-size: 1.7rem !important; } }
-    </style>
-    """,
-    unsafe_allow_html=True,
-)
+tema.aplicar()
+tema.reiniciar_contagem()
 
 estado.iniciar()
 ss = st.session_state
@@ -140,7 +131,7 @@ with st.sidebar:
             "- **Ainda é protótipo:** oportunidades são **exemplos fictícios**; comunidade só na sua sessão; sem mapa e sem contas."
         )
 
-st.title("🎨 ArteConecta IA")
+tema.cabecalho()
 st.warning("Protótipo de demonstração. As oportunidades são **exemplos fictícios**. Sempre confirme prazos e regras na fonte oficial.", icon="⚠️")
 
 
@@ -169,7 +160,7 @@ def formulario_perfil():
 
 
 def cartao_resumo(o, c):
-    with st.container(border=True):
+    with tema.cartao():
         st.markdown(f"**{o['nome']}**")
         prazo = o["prazo"].strftime("%d/%m/%Y") if o["prazo"] else "não informado"
         st.caption(f"{ICONES[o['estado_info']]} {o['estado_info']} • Prazo: {prazo} • Compatibilidade {c['nivel']} ({c['pontos']}%)")
@@ -180,7 +171,7 @@ def painel():
     p = ss.perfil
     tarefas = pl.gerar_plano(p)
     feitas = sum(1 for t in tarefas if ss.progresso.get(f"tar:{t['id']}"))
-    with st.container(border=True):
+    with tema.cartao():
         st.markdown(f"### Olá, {p['apelido']}!")
         st.caption(f"{p['area']} • {p.get('cidade') or 'cidade não informada'}/{p['estado']} • nível {p['nivel']}")
         st.progress(feitas / len(tarefas) if tarefas else 0.0, text=f"Plano: {feitas} de {len(tarefas)} tarefas concluídas")
@@ -188,7 +179,7 @@ def painel():
 
     st.subheader("🎯 Seu próximo passo")
     pend = [t for t in tarefas if not ss.progresso.get(f"tar:{t['id']}")]
-    with st.container(border=True):
+    with tema.cartao():
         if pend:
             t = pend[0]
             st.markdown(f"**{t['titulo']}**")
@@ -209,7 +200,7 @@ def painel():
         o = next((x for x in OPORTUNIDADES if x["id"] == oid), None)
         if o:
             feitos, total = cm.progresso(oid, cm.gerar_checklist(o), ss.progresso)
-            with st.container(border=True):
+            with tema.cartao():
                 st.markdown(f"**{o['nome']}**")
                 st.progress(feitos / total, text=f"{feitos} de {total} etapas")
 
@@ -218,7 +209,7 @@ def painel():
     if not sug:
         st.caption("Nenhuma sugestão agora. Veja a aba 🤝 Comunidade.")
     for post, _, motivos in sug:
-        with st.container(border=True):
+        with tema.cartao():
             st.markdown(f"**{post['titulo']}**" + (" 🧪 exemplo fictício" if post.get("exemplo") else ""))
             st.caption(" ".join(motivos))
 
@@ -240,7 +231,7 @@ def aba_primeiro_passo():
         return
     st.caption("Este plano é montado por regras, a partir das suas respostas, e muda se você mudar o perfil. Não garante resultados.")
     for t in pl.gerar_plano(ss.perfil):
-        with st.container(border=True):
+        with tema.cartao():
             estado.checkbox(t["titulo"], f"tar:{t['id']}")
             st.write(t["descricao"])
             st.caption(f"Por que para você: {t['porque']}")
@@ -260,7 +251,7 @@ def checklist(o):
 
 
 def cartao(o, c=None):
-    with st.container(border=True):
+    with tema.cartao():
         st.markdown(f"**{o['nome']}**")
         st.caption(f"{ICONES[o['estado_info']]} Informação: {o['estado_info']} • {o['tipo']} • {o['organizacao']}")
         st.write(o["descricao"])
@@ -510,7 +501,7 @@ def aba_comunidade():
     posts = co.filtrar(todos_posts(), area, uf, formato, disp, tipo, ss.bloqueados)
     st.caption(f"{len(posts)} publicações. Não há ranking por popularidade, curtidas ou seguidores.")
     for p in posts:
-        with st.container(border=True):
+        with tema.cartao():
             st.markdown(f"**{p['titulo']}**" + (" 🧪 exemplo fictício" if p.get("exemplo") else ""))
             st.caption(f"{p['tipo']} • de {p['autor']} • área: {p['area']} • procura: {p['procura']}")
             st.write(p["descricao"])
