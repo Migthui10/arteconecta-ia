@@ -15,7 +15,10 @@ Plataforma para artistas independentes: do "não sei por onde começar" até a c
 | 🤝 Comunidade | Pedidos de colaboração, filtros, denúncia, bloqueio, dicas contra golpe | Não |
 
 ## Visual
-Tema "arte de rua" (lambe-lambe em parede de concreto) em `tema.py`. Só aparência: para mudar cores, edite as variáveis no topo do CSS. Requer Streamlit 1.40 ou mais novo (já no `requirements.txt`).
+Tema "arte de rua" (lambe-lambe em parede de concreto) em `tema.py`, em tela cheia (`layout="wide"`), com letras grandes e em negrito.
+Só aparência: para mudar cores, edite as variáveis no topo do CSS de `tema.py`.
+
+Opcional, para os campos de texto e a cor de destaque ficarem 100% no tema: crie, na **raiz** do repositório (fora da pasta `files`), o arquivo `.streamlit/config.toml` com o conteúdo do arquivo `config.toml` que acompanha este projeto.
 
 ## Arquivos
 - `app.py` interface | `motor.py` busca nos guias | `oportunidades.py` filtros, datas e compatibilidade

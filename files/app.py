@@ -1,5 +1,5 @@
 """
-ArteConecta IA - interface (Streamlit)
+ArteConecta IA - interface (Streamlit), layout em tela cheia com tema de arte de rua.
 Rodar localmente:  streamlit run app.py
 A lógica fica nos módulos: oportunidades, plano, caminho, tradutor, portfolio, comunidade, motor, ia.
 """
@@ -20,10 +20,8 @@ import tema
 import tradutor as tr
 from motor import Motor
 
-st.set_page_config(page_title="ArteConecta IA", page_icon="🎨", layout="centered")
-
+st.set_page_config(page_title="ArteConecta IA", page_icon="🎨", layout="wide")
 tema.aplicar()
-tema.reiniciar_contagem()
 
 estado.iniciar()
 ss = st.session_state
@@ -61,6 +59,14 @@ def _i(lista, valor, padrao=0):
 
 def todos_posts():
     return co.EXEMPLOS + ss.posts_usuario
+
+
+def grade(itens, desenhar, colunas=2):
+    """Distribui os itens em colunas (no celular as colunas empilham sozinhas)."""
+    cols = st.columns(colunas)
+    for i, item in enumerate(itens):
+        with cols[i % colunas]:
+            desenhar(item)
 
 
 # ---------- callbacks ----------
@@ -138,18 +144,31 @@ st.warning("Protótipo de demonstração. As oportunidades são **exemplos fict�
 # ---------- INÍCIO ----------
 def formulario_perfil():
     p = ss.perfil
-    st.info("Pedimos só o necessário para sugerir seus próximos passos. Seus dados ficam apenas nesta sessão (ou no arquivo que você baixar).")
-    with st.form("form_perfil"):
-        apelido = st.text_input("Como podemos te chamar? (nome ou nome artístico)", value=p.get("apelido", ""), key="w::p_apelido")
-        area = st.selectbox("Área artística", op.AREAS, index=_i(op.AREAS, p.get("area")), key="w::p_area")
-        c1, c2 = st.columns(2)
-        uf = c1.selectbox("Estado", op.ESTADOS, index=_i(op.ESTADOS, p.get("estado", "SP")), key="w::p_uf")
-        cidade = c2.text_input("Cidade", value=p.get("cidade", ""), key="w::p_cidade")
-        nivel = st.selectbox("Nível de experiência", op.NIVEIS, index=_i(op.NIVEIS, p.get("nivel")), key="w::p_nivel")
-        objetivo = st.selectbox("Objetivo principal agora", pl.OBJETIVOS, index=_i(pl.OBJETIVOS, p.get("objetivo")), key="w::p_obj")
-        dif = st.multiselect("Principais dificuldades (pode marcar várias)", pl.DIFICULDADES, default=[d for d in p.get("dificuldades", []) if d in pl.DIFICULDADES], key="w::p_dif")
-        tipos = st.multiselect("Tipos de oportunidade que você procura", op.TIPOS, default=[t for t in p.get("tipos", []) if t in op.TIPOS], key="w::p_tipos")
-        ok = st.form_submit_button("Salvar e ver meu painel")
+    esq, dir_ = st.columns([3, 2])
+    with esq:
+        st.info("Pedimos só o necessário para sugerir seus próximos passos. Seus dados ficam apenas nesta sessão (ou no arquivo que você baixar).")
+        with st.form("form_perfil"):
+            f1, f2 = st.columns(2)
+            apelido = f1.text_input("Como podemos te chamar? (nome ou nome artístico)", value=p.get("apelido", ""), key="w::p_apelido")
+            area = f2.selectbox("Área artística", op.AREAS, index=_i(op.AREAS, p.get("area")), key="w::p_area")
+            f3, f4 = st.columns(2)
+            uf = f3.selectbox("Estado", op.ESTADOS, index=_i(op.ESTADOS, p.get("estado", "SP")), key="w::p_uf")
+            cidade = f4.text_input("Cidade", value=p.get("cidade", ""), key="w::p_cidade")
+            f5, f6 = st.columns(2)
+            nivel = f5.selectbox("Nível de experiência", op.NIVEIS, index=_i(op.NIVEIS, p.get("nivel")), key="w::p_nivel")
+            objetivo = f6.selectbox("Objetivo principal agora", pl.OBJETIVOS, index=_i(pl.OBJETIVOS, p.get("objetivo")), key="w::p_obj")
+            dif = st.multiselect("Principais dificuldades (pode marcar várias)", pl.DIFICULDADES, default=[d for d in p.get("dificuldades", []) if d in pl.DIFICULDADES], key="w::p_dif")
+            tipos = st.multiselect("Tipos de oportunidade que você procura", op.TIPOS, default=[t for t in p.get("tipos", []) if t in op.TIPOS], key="w::p_tipos")
+            ok = st.form_submit_button("Salvar e ver meu painel", type="primary")
+    with dir_:
+        tema.poster(
+            "<b>Com o seu perfil, você recebe:</b><br>"
+            "🎯 um <b>próximo passo</b> feito para você<br>"
+            "📡 oportunidades <b>compatíveis</b>, com o motivo explicado<br>"
+            "✅ um <b>checklist</b> para preparar cada inscrição<br>"
+            "🤝 sugestões de <b>parceiros</b> de projeto<br><br>"
+            "Sem cadastro, sem senha. Você pode salvar seu progresso em um arquivo."
+        )
     if ok:
         if not apelido.strip():
             st.error("Escreva como podemos te chamar para continuar.")
@@ -164,59 +183,62 @@ def cartao_resumo(o, c):
         st.markdown(f"**{o['nome']}**")
         prazo = o["prazo"].strftime("%d/%m/%Y") if o["prazo"] else "não informado"
         st.caption(f"{ICONES[o['estado_info']]} {o['estado_info']} • Prazo: {prazo} • Compatibilidade {c['nivel']} ({c['pontos']}%)")
-        st.caption("Veja os detalhes e o checklist na aba 📡 Radar.")
+        st.caption("Detalhes e checklist na aba 📡 Radar.")
 
 
 def painel():
     p = ss.perfil
     tarefas = pl.gerar_plano(p)
     feitas = sum(1 for t in tarefas if ss.progresso.get(f"tar:{t['id']}"))
-    with tema.cartao():
-        st.markdown(f"### Olá, {p['apelido']}!")
-        st.caption(f"{p['area']} • {p.get('cidade') or 'cidade não informada'}/{p['estado']} • nível {p['nivel']}")
-        st.progress(feitas / len(tarefas) if tarefas else 0.0, text=f"Plano: {feitas} de {len(tarefas)} tarefas concluídas")
-        st.button("Editar perfil", on_click=_editar_perfil)
-
-    st.subheader("🎯 Seu próximo passo")
     pend = [t for t in tarefas if not ss.progresso.get(f"tar:{t['id']}")]
-    with tema.cartao():
-        if pend:
-            t = pend[0]
-            st.markdown(f"**{t['titulo']}**")
-            st.write(t["descricao"])
-            st.caption(f"Por que para você: {t['porque']} • Onde: {t['onde']}")
-            st.button("Marcar como concluída", key=f"ini_done_{t['id']}", on_click=_marcar, args=(f"tar:{t['id']}",))
-        else:
-            st.success("Você concluiu todas as tarefas do plano. Veja novas oportunidades no Radar.")
-
-    st.subheader("📡 Oportunidades compatíveis")
-    for o, c in op.recomendadas(OPORTUNIDADES, p, 3, HOJE):
-        cartao_resumo(o, c)
-
-    st.subheader("📝 Candidaturas em preparação")
-    if not ss.candidaturas:
-        st.caption("Nenhuma ainda. No Radar, toque em “Preparar candidatura” em uma oportunidade.")
-    for oid in ss.candidaturas:
-        o = next((x for x in OPORTUNIDADES if x["id"] == oid), None)
-        if o:
-            feitos, total = cm.progresso(oid, cm.gerar_checklist(o), ss.progresso)
-            with tema.cartao():
-                st.markdown(f"**{o['nome']}**")
-                st.progress(feitos / total, text=f"{feitos} de {total} etapas")
-
-    st.subheader("🤝 Sugestões de colaboração")
-    sug = co.recomendar(todos_posts(), p, ss.bloqueados)
-    if not sug:
-        st.caption("Nenhuma sugestão agora. Veja a aba 🤝 Comunidade.")
-    for post, _, motivos in sug:
+    c1, c2 = st.columns(2)
+    with c1:
         with tema.cartao():
-            st.markdown(f"**{post['titulo']}**" + (" 🧪 exemplo fictício" if post.get("exemplo") else ""))
-            st.caption(" ".join(motivos))
+            st.markdown(f"### Olá, {p['apelido']}!")
+            st.caption(f"{p['area']} • {p.get('cidade') or 'cidade não informada'}/{p['estado']} • nível {p['nivel']}")
+            st.progress(feitas / len(tarefas) if tarefas else 0.0, text=f"Plano: {feitas} de {len(tarefas)} tarefas concluídas")
+            st.button("Editar perfil", on_click=_editar_perfil)
+    with c2:
+        with tema.cartao():
+            st.markdown("### Seu próximo passo")
+            if pend:
+                t = pend[0]
+                st.markdown(f"**{t['titulo']}**")
+                st.write(t["descricao"])
+                st.caption(f"Por que para você: {t['porque']} • Onde: {t['onde']}")
+                st.button("Marcar como concluída", key=f"ini_done_{t['id']}", on_click=_marcar, args=(f"tar:{t['id']}",))
+            else:
+                st.success("Você concluiu todas as tarefas do plano. Veja novas oportunidades no Radar.")
+
+    a, b, c = st.columns(3)
+    with a:
+        st.subheader("Oportunidades compatíveis")
+        for o, comp in op.recomendadas(OPORTUNIDADES, p, 3, HOJE):
+            cartao_resumo(o, comp)
+    with b:
+        st.subheader("Candidaturas em preparação")
+        if not ss.candidaturas:
+            st.caption("Nenhuma ainda. No Radar, toque em “Preparar candidatura” em uma oportunidade.")
+        for oid in ss.candidaturas:
+            o = next((x for x in OPORTUNIDADES if x["id"] == oid), None)
+            if o:
+                feitos, total = cm.progresso(oid, cm.gerar_checklist(o), ss.progresso)
+                with tema.cartao():
+                    st.markdown(f"**{o['nome']}**")
+                    st.progress(feitos / total, text=f"{feitos} de {total} etapas")
+    with c:
+        st.subheader("Sugestões de colaboração")
+        sug = co.recomendar(todos_posts(), p, ss.bloqueados)
+        if not sug:
+            st.caption("Nenhuma sugestão agora. Veja a aba 🤝 Comunidade.")
+        for post, _, motivos in sug:
+            with tema.cartao():
+                st.markdown(f"**{post['titulo']}**" + (" 🧪 exemplo fictício" if post.get("exemplo") else ""))
+                st.caption(" ".join(motivos))
 
 
 def aba_inicio():
-    st.markdown("## Seu talento merece uma oportunidade.")
-    st.markdown("#### Vamos encontrar o próximo passo?")
+    tema.chamada()
     if not ss.perfil or ss.get("editando_perfil"):
         formulario_perfil()
     else:
@@ -225,17 +247,20 @@ def aba_inicio():
 
 # ---------- PRIMEIRO PASSO ----------
 def aba_primeiro_passo():
-    st.subheader("🧭 Meu primeiro passo")
+    st.subheader("Meu primeiro passo")
     if not ss.perfil:
         st.info("Preencha seu perfil na aba 🏠 Início para receber um plano.")
         return
     st.caption("Este plano é montado por regras, a partir das suas respostas, e muda se você mudar o perfil. Não garante resultados.")
-    for t in pl.gerar_plano(ss.perfil):
+
+    def tarefa(t):
         with tema.cartao():
             estado.checkbox(t["titulo"], f"tar:{t['id']}")
             st.write(t["descricao"])
             st.caption(f"Por que para você: {t['porque']}")
             st.caption(f"Onde: {t['onde']}")
+
+    grade(pl.gerar_plano(ss.perfil), tarefa, 2)
 
 
 # ---------- RADAR ----------
@@ -250,9 +275,10 @@ def checklist(o):
     st.button("Remover das minhas candidaturas", key=f"rad_rem_{o['id']}", on_click=_remover, args=(o["id"],))
 
 
-def cartao(o, c=None):
+def cartao(par):
+    o, c = par
     with tema.cartao():
-        st.markdown(f"**{o['nome']}**")
+        st.markdown(f"### {o['nome']}")
         st.caption(f"{ICONES[o['estado_info']]} Informação: {o['estado_info']} • {o['tipo']} • {o['organizacao']}")
         st.write(o["descricao"])
         if o["prazo"]:
@@ -281,26 +307,27 @@ def cartao(o, c=None):
             with st.expander("✅ Caminho até a oportunidade", expanded=True):
                 checklist(o)
         elif o["situacao_prazo"] != "Encerrada":
-            st.button("Preparar candidatura", key=f"rad_prep_{o['id']}", on_click=_preparar, args=(o["id"],))
+            st.button("Preparar candidatura", key=f"rad_prep_{o['id']}", on_click=_preparar, args=(o["id"],), type="primary")
 
 
 def aba_radar():
-    st.subheader("📡 Radar de oportunidades")
+    st.subheader("Radar de oportunidades")
     p = ss.perfil
-    with st.expander("🔎 Filtros", expanded=False):
-        c1, c2 = st.columns(2)
+    with st.expander("🔎 Filtros", expanded=True):
+        c1, c2, c3, c4 = st.columns(4)
         area = c1.selectbox("Área artística", ["Todas"] + op.AREAS, index=_i(op.AREAS, p.get("area"), -1) + 1, key="f_area")
         uf = c2.selectbox("Estado", ["Todos"] + op.ESTADOS, index=_i(op.ESTADOS, p.get("estado"), -1) + 1, key="f_uf")
-        c3, c4 = st.columns(2)
         mod = c3.selectbox("Modalidade", ["Todas"] + op.MODALIDADES, key="f_mod")
         tipo = c4.selectbox("Tipo", ["Todos"] + op.TIPOS, key="f_tipo")
-        c5, c6 = st.columns(2)
+        c5, c6, c7, c8 = st.columns(4)
         nivel = c5.selectbox("Nível de experiência", ["Todos"] + op.NIVEIS, key="f_nivel")
         prazos = {"Qualquer prazo": None, "Até 15 dias": 15, "Até 30 dias": 30, "Até 90 dias": 90}
         prazo = c6.selectbox("Prazo de inscrição", list(prazos), key="f_prazo")
-        gratis = st.checkbox("Só gratuitas", key="f_gratis")
-        pagas = st.checkbox("Só com remuneração", key="f_pagas")
-        abertas = st.checkbox("Esconder encerradas", value=True, key="f_abertas")
+        with c7:
+            gratis = st.checkbox("Só gratuitas", key="f_gratis")
+            pagas = st.checkbox("Só com remuneração", key="f_pagas")
+        with c8:
+            abertas = st.checkbox("Esconder encerradas", value=True, key="f_abertas")
     lista = op.filtrar(OPORTUNIDADES, area, uf, mod, gratis, pagas, tipo, nivel, prazos[prazo], abertas, HOJE)
     st.caption(f"{len(lista)} oportunidades encontradas. Todas as que aparecem aqui são exemplos fictícios.")
     if p:
@@ -310,31 +337,36 @@ def aba_radar():
         pares = [(o, None) for o in lista]
     if not pares:
         st.info("Nenhuma oportunidade com esses filtros. Tente mudar a área, o estado ou o prazo.")
-    for o, c in pares:
-        cartao(o, c)
+    grade(pares, cartao, 2)
 
 
 # ---------- TRADUTOR ----------
 def aba_tradutor():
-    st.subheader("📄 Tradutor de editais")
+    st.subheader("Tradutor de editais")
     st.caption("Cole o texto de um edital ou envie um PDF. A ferramenta organiza o que o documento diz, com a página de cada trecho.")
     modo = st.radio("Como você quer enviar?", ["Colar o texto", "Enviar arquivo (PDF ou TXT)"], horizontal=True, key="tr_modo")
+    esq, dir_ = st.columns([3, 2])
     texto = None
-    if modo == "Colar o texto":
-        texto = st.text_area("Texto do edital", height=220, key="tr_texto")
-        st.caption("Para citar páginas, escreva [[PÁGINA 1]] antes do texto de cada página.")
-        st.button("Usar edital de exemplo (fictício)", on_click=_exemplo_edital)
-    else:
-        arq = st.file_uploader("Arquivo do edital", type=["pdf", "txt"], key="tr_arquivo")
-        if arq:
-            try:
-                texto = tr.extrair_pdf(arq) if arq.name.lower().endswith(".pdf") else arq.getvalue().decode("utf-8", errors="replace")
-            except ValueError as e:
-                st.error(str(e))
-            except Exception:
-                st.error("Não consegui abrir este arquivo. Tente colar o texto.")
-    link = st.text_input("Link do edital original (opcional)", key="tr_link")
-    if st.button("Analisar edital", type="primary"):
+    with esq:
+        if modo == "Colar o texto":
+            texto = st.text_area("Texto do edital", height=260, key="tr_texto")
+            st.caption("Para citar páginas, escreva [[PÁGINA 1]] antes do texto de cada página.")
+        else:
+            arq = st.file_uploader("Arquivo do edital", type=["pdf", "txt"], key="tr_arquivo")
+            if arq:
+                try:
+                    texto = tr.extrair_pdf(arq) if arq.name.lower().endswith(".pdf") else arq.getvalue().decode("utf-8", errors="replace")
+                except ValueError as e:
+                    st.error(str(e))
+                except Exception:
+                    st.error("Não consegui abrir este arquivo. Tente colar o texto.")
+    with dir_:
+        link = st.text_input("Link do edital original (opcional)", key="tr_link")
+        if modo == "Colar o texto":
+            st.button("Usar edital de exemplo (fictício)", on_click=_exemplo_edital)
+        analisar = st.button("Analisar edital", type="primary")
+        tema.poster("<b>O que você recebe:</b><br>📄 trechos por tema, com a <b>página</b><br>📅 datas e valores achados<br>✅ tarefas para a candidatura<br>❓ perguntas ao documento")
+    if analisar:
         if not texto or len(texto.strip()) < 100:
             st.warning("Cole ou envie um texto de edital com mais conteúdo.")
         else:
@@ -351,7 +383,7 @@ def aba_tradutor():
     if ss.get("analise_link", "").startswith(("http://", "https://")):
         st.link_button("Abrir edital original", ss["analise_link"])
     if a["resumo_ia"]:
-        st.markdown("### Resumo em linguagem simples")
+        st.subheader("Resumo em linguagem simples")
         st.markdown(a["resumo_ia"])
         st.caption("🤖 Texto gerado por IA a partir dos trechos abaixo (interpretação). Os trechos originais são os fatos. Em caso de diferença, vale o documento.")
     elif TOKEN and not ss.get("consentimento_ia"):
@@ -361,108 +393,127 @@ def aba_tradutor():
     else:
         st.info("Modo sem IA (IA não configurada): abaixo estão os trechos do documento organizados por tema, sem reescrita.")
     if a["datas"] or a["valores"]:
-        st.markdown("### Datas e valores encontrados")
-        for d in a["datas"]:
-            st.write(f"📅 **{d['data']}** ({tr._pg(d['pagina'])}): …{tr.esc_md(d['contexto'])}…")
-        for v, pg in a["valores"]:
-            st.write(f"💰 **{v}** ({tr._pg(pg)})")
-    st.markdown("### O que o documento diz, por tema")
-    for tema, lista in a["topicos"].items():
-        with st.expander(tema):
+        st.subheader("Datas e valores encontrados")
+        d1, d2 = st.columns(2)
+        with d1:
+            for d in a["datas"]:
+                st.write(f"📅 **{d['data']}** ({tr._pg(d['pagina'])}): …{tr.esc_md(d['contexto'])}…")
+        with d2:
+            for v, pg in a["valores"]:
+                st.write(f"💰 **{v}** ({tr._pg(pg)})")
+    st.subheader("O que o documento diz, por tema")
+
+    def topico(item):
+        tema_nome, lista = item
+        with st.expander(tema_nome):
             if not lista:
                 st.write("Não encontrei trechos sobre este tema no texto analisado.")
             for t in lista:
                 st.markdown("> " + tr.esc_md(t["texto"]))
                 st.caption(f"Trecho original • {tr._pg(t['pagina'])}")
-    st.markdown("### ✅ Tarefas para preparar sua candidatura")
-    for i, t in enumerate(a["tarefas"]):
-        st.checkbox(t, key=f"ed_{i}")
-    st.markdown("### Pergunte ao documento")
-    perg = st.text_input("Sua pergunta sobre este edital", key="tr_perg")
-    if st.button("Buscar no edital") and perg.strip():
-        ss.analise_perg = (perg, *tr.perguntar(a["trechos"], perg, TOKEN_IA))
-    if ss.get("analise_perg"):
-        _, resp, achados = ss.analise_perg
-        if not achados:
-            st.info("Não encontrei isso no texto analisado. Releia o edital oficial ou pergunte à organização.")
-        else:
-            if resp:
-                st.markdown(resp)
-                st.caption("🤖 Resposta de IA baseada nos trechos abaixo.")
-            for t in achados:
-                st.markdown("> " + tr.esc_md(t["texto"]))
-                st.caption(f"Trecho original • {tr._pg(t['pagina'])}")
+
+    grade(list(a["topicos"].items()), topico, 2)
+    e1, e2 = st.columns(2)
+    with e1:
+        st.subheader("Tarefas para a candidatura")
+        for i, t in enumerate(a["tarefas"]):
+            st.checkbox(t, key=f"ed_{i}")
+    with e2:
+        st.subheader("Pergunte ao documento")
+        perg = st.text_input("Sua pergunta sobre este edital", key="tr_perg")
+        if st.button("Buscar no edital") and perg.strip():
+            ss.analise_perg = (perg, *tr.perguntar(a["trechos"], perg, TOKEN_IA))
+        if ss.get("analise_perg"):
+            _, resp, achados = ss.analise_perg
+            if not achados:
+                st.info("Não encontrei isso no texto analisado. Releia o edital oficial ou pergunte à organização.")
+            else:
+                if resp:
+                    st.markdown(resp)
+                    st.caption("🤖 Resposta de IA baseada nos trechos abaixo.")
+                for t in achados:
+                    st.markdown("> " + tr.esc_md(t["texto"]))
+                    st.caption(f"Trecho original • {tr._pg(t['pagina'])}")
 
 
 # ---------- PORTFÓLIO ----------
 def aba_portfolio():
-    st.subheader("🖼️ Portfólio de bolso")
+    st.subheader("Portfólio de bolso")
     st.caption("Você informa os fatos; a ferramenta organiza e melhora a escrita. Ela não cria prêmios, clientes, experiências ou projetos. Revise tudo antes de usar.")
     d0 = ss.portfolio.get("dados", {})
     p = ss.perfil
-    with st.form("form_portfolio"):
-        nome = st.text_input("Nome artístico (ou seu nome)", value=d0.get("nome", p.get("apelido", "")), key="w::pfm_nome")
-        area = st.selectbox("Área de atuação", op.AREAS, index=_i(op.AREAS, d0.get("area", p.get("area"))), key="w::pfm_area")
-        cidade = st.text_input("Cidade do portfólio", value=d0.get("cidade", p.get("cidade", "")), key="w::pfm_cidade")
-        bio = st.text_area("Sobre você (escreva do seu jeito, 2 a 5 frases)", value=d0.get("biografia", ""), key="w::pfm_bio")
-        habil = st.text_input("Habilidades (separe por vírgula)", value=d0.get("habilidades", ""), key="w::pfm_habil")
-        proj = st.text_area("Obras e projetos (um por linha)", value=d0.get("projetos", ""), key="w::pfm_proj")
-        exp = st.text_area("Experiências reais (apresentações, exposições, cursos; uma por linha)", value=d0.get("experiencias", ""), key="w::pfm_exp")
-        links = st.text_area("Links de trabalhos publicados (um por linha)", value=d0.get("links", ""), key="w::pfm_links")
-        contato = st.text_input("Contato profissional (opcional)", value=d0.get("contato", ""), key="w::pfm_contato")
-        gerar = st.form_submit_button("Gerar meu portfólio")
+    esq, dir_ = st.columns(2)
+    with esq:
+        with st.form("form_portfolio"):
+            g1, g2 = st.columns(2)
+            nome = g1.text_input("Nome artístico (ou seu nome)", value=d0.get("nome", p.get("apelido", "")), key="w::pfm_nome")
+            area = g2.selectbox("Área de atuação", op.AREAS, index=_i(op.AREAS, d0.get("area", p.get("area"))), key="w::pfm_area")
+            cidade = st.text_input("Cidade do portfólio", value=d0.get("cidade", p.get("cidade", "")), key="w::pfm_cidade")
+            bio = st.text_area("Sobre você (escreva do seu jeito, 2 a 5 frases)", value=d0.get("biografia", ""), key="w::pfm_bio")
+            habil = st.text_input("Habilidades (separe por vírgula)", value=d0.get("habilidades", ""), key="w::pfm_habil")
+            proj = st.text_area("Obras e projetos (um por linha)", value=d0.get("projetos", ""), key="w::pfm_proj")
+            exp = st.text_area("Experiências reais (apresentações, exposições, cursos; uma por linha)", value=d0.get("experiencias", ""), key="w::pfm_exp")
+            links = st.text_area("Links de trabalhos publicados (um por linha)", value=d0.get("links", ""), key="w::pfm_links")
+            contato = st.text_input("Contato profissional (opcional)", value=d0.get("contato", ""), key="w::pfm_contato")
+            gerar = st.form_submit_button("Gerar meu portfólio", type="primary")
     if gerar:
         dados = dict(nome=nome, area=area, cidade=cidade, biografia=bio, habilidades=habil, projetos=proj, experiencias=exp, links=links, contato=contato)
         r = pf.montar(dados, TOKEN_IA)
         ss.portfolio = {"dados": dados, "apresentacao": r["apresentacao"], "biografia": r["biografia"], "avisos": r["avisos"], "usou_ia": r["usou_ia"]}
         ss["w::pf_ap"], ss["w::pf_bio"] = r["apresentacao"], r["biografia"]
-    if not ss.portfolio.get("dados"):
-        return
-    pt = ss.portfolio
-    for aviso in pt.get("avisos", []):
-        st.warning(aviso)
-    if pt.get("usou_ia"):
-        st.caption("🤖 Textos reescritos por IA a partir dos seus dados. Edite abaixo o que for necessário.")
-    else:
-        st.caption("Modo sem IA: seus textos foram organizados, sem reescrita. Você pode editar abaixo.")
-    st.text_area("Apresentação curta (editável)", value=pt.get("apresentacao", ""), key="w::pf_ap", on_change=_salvar_texto, args=("apresentacao", "w::pf_ap"))
-    st.text_area("Biografia (editável)", value=pt.get("biografia", ""), key="w::pf_bio", on_change=_salvar_texto, args=("biografia", "w::pf_bio"))
-    st.markdown("**Estrutura do seu portfólio**")
-    for nome_s, ok in pf.estrutura(pt["dados"]):
-        st.write(("✅ " if ok else "⬜ ") + nome_s + (" (preenchido)" if ok else " (faltando)"))
-    tema = st.selectbox("Modelo visual", list(pf.TEMAS), key="pf_tema")
-    html_final = pf.gerar_html(pt["dados"], pt.get("apresentacao", ""), pt.get("biografia", ""), tema)
-    st.download_button("⬇️ Baixar portfólio (HTML)", html_final, "meu-portfolio.html", "text/html")
-    st.caption("Para PDF: abra o arquivo baixado no navegador e use Ctrl+P ▸ Salvar como PDF. Compartilhar por link ainda não está disponível neste protótipo.")
-    components.html(html_final, height=480, scrolling=True)
+    with dir_:
+        pt = ss.portfolio
+        if not pt.get("dados"):
+            tema.poster("<b>Como funciona:</b><br>1. Preencha o formulário ao lado<br>2. Toque em <b>Gerar meu portfólio</b><br>3. Edite os textos<br>4. Baixe o arquivo e imprima como PDF<br><br>Nada é inventado: só entra o que você escreveu.")
+            return
+        for aviso in pt.get("avisos", []):
+            st.warning(aviso)
+        if pt.get("usou_ia"):
+            st.caption("🤖 Textos reescritos por IA a partir dos seus dados. Edite abaixo o que for necessário.")
+        else:
+            st.caption("Modo sem IA: seus textos foram organizados, sem reescrita. Você pode editar abaixo.")
+        st.text_area("Apresentação curta (editável)", value=pt.get("apresentacao", ""), key="w::pf_ap", on_change=_salvar_texto, args=("apresentacao", "w::pf_ap"))
+        st.text_area("Biografia (editável)", value=pt.get("biografia", ""), key="w::pf_bio", on_change=_salvar_texto, args=("biografia", "w::pf_bio"))
+        st.markdown("**Estrutura do seu portfólio**")
+        for nome_s, ok in pf.estrutura(pt["dados"]):
+            st.write(("✅ " if ok else "⬜ ") + nome_s + (" (preenchido)" if ok else " (faltando)"))
+        modelo = st.selectbox("Modelo visual", list(pf.TEMAS), key="pf_tema")
+        html_final = pf.gerar_html(pt["dados"], pt.get("apresentacao", ""), pt.get("biografia", ""), modelo)
+        st.download_button("⬇️ Baixar portfólio (HTML)", html_final, "meu-portfolio.html", "text/html")
+        st.caption("Para PDF: abra o arquivo baixado no navegador e use Ctrl+P ▸ Salvar como PDF. Compartilhar por link ainda não está disponível neste protótipo.")
+    if pt.get("dados"):
+        components.html(html_final, height=520, scrolling=True)
 
 
 # ---------- APRENDER ----------
 def aba_aprender():
-    st.subheader("📚 Aprenda para crescer")
+    st.subheader("Aprenda para crescer")
     st.info("Conteúdo educativo. Em temas jurídicos, tributários ou administrativos, confira a fonte oficial: a regra pode depender da sua situação.")
     temas = sorted({d["tema"] for d in motor.docs})
     c1, c2 = st.columns(2)
-    tema = c1.selectbox("Tema", ["Todos"] + temas, key="ap_tema")
+    tema_f = c1.selectbox("Tema", ["Todos"] + temas, key="ap_tema")
     nivel = c2.selectbox("Nível do conteúdo", ["Todos", "Iniciante", "Intermediário"], key="ap_nivel")
-    docs = [d for d in motor.docs if (tema == "Todos" or d["tema"] == tema) and (nivel == "Todos" or d["nivel"] == nivel)]
+    docs = [d for d in motor.docs if (tema_f == "Todos" or d["tema"] == tema_f) and (nivel == "Todos" or d["nivel"] == nivel)]
     if not docs:
         st.info("Nenhum guia com esses filtros.")
-    for d in sorted(docs, key=lambda x: (x["tema"], x["nivel"])):
+
+    def guia(d):
         with st.expander(f"{d['titulo']} • {d['nivel']}"):
             st.write(d["texto"])
             st.caption(f"{'📜 Fonte oficial' if d['tipo_fonte'] == 'Fonte oficial' else '💡 Orientação geral'} • {d['tema']} • {d['fonte']}")
 
+    grade(sorted(docs, key=lambda x: (x["tema"], x["nivel"])), guia, 2)
+
 
 # ---------- PERGUNTE ----------
 def aba_pergunte():
-    st.subheader("💬 Pergunte")
+    st.subheader("Pergunte")
     ss.setdefault("msgs", [{"role": "assistant", "texto": "Oi! Sou o ArteConecta. Pergunte sobre direitos culturais, MEI, editais ou direitos autorais.", "fontes": []}])
-    c1, c2 = st.columns(2)
-    atalhos = [("Como virar MEI sendo artista?", c1), ("O que é a Lei Paulo Gustavo?", c2), ("Como me inscrever em um edital?", c1), ("Posso tocar na rua sem autorização?", c2)]
+    atalhos = ["Como virar MEI sendo artista?", "O que é a Lei Paulo Gustavo?", "Como me inscrever em um edital?", "Posso tocar na rua sem autorização?"]
+    cols = st.columns(4)
     pergunta = None
-    for i, (texto, col) in enumerate(atalhos):
-        if col.button(texto, key=f"atalho_{i}", use_container_width=True):
+    for i, texto in enumerate(atalhos):
+        if cols[i].button(texto, key=f"atalho_{i}", use_container_width=True):
             pergunta = texto
     for m in ss.msgs:
         with st.chat_message(m["role"]):
@@ -479,7 +530,7 @@ def aba_pergunte():
 
 # ---------- COMUNIDADE ----------
 def aba_comunidade():
-    st.subheader("🤝 Comunidade e colaboração")
+    st.subheader("Comunidade e colaboração")
     st.info("Neste protótipo, as publicações ficam só na sua sessão: outras pessoas ainda não as veem. Uma comunidade real exige banco de dados e moderação (Etapa 3).")
     with st.expander("🛡️ Como se proteger de golpes"):
         st.markdown(
@@ -491,19 +542,19 @@ def aba_comunidade():
         )
     if ss.get("aviso_com"):
         st.success(ss.pop("aviso_com"))
-    c1, c2 = st.columns(2)
+    c1, c2, c3, c4, c5 = st.columns(5)
     area = c1.selectbox("Área", ["Todas"] + op.AREAS, key="c_area")
     uf = c2.selectbox("Estado", ["Todos"] + op.ESTADOS, key="c_uf")
-    c3, c4 = st.columns(2)
     formato = c3.selectbox("Formato", ["Todos"] + co.FORMATOS, key="c_formato")
     disp = c4.selectbox("Disponibilidade", ["Todas"] + co.DISPONIBILIDADES, key="c_disp")
-    tipo = st.selectbox("Tipo de publicação", ["Todos"] + co.TIPOS, key="c_tipo")
+    tipo = c5.selectbox("Tipo de publicação", ["Todos"] + co.TIPOS, key="c_tipo")
     posts = co.filtrar(todos_posts(), area, uf, formato, disp, tipo, ss.bloqueados)
     st.caption(f"{len(posts)} publicações. Não há ranking por popularidade, curtidas ou seguidores.")
-    for p in posts:
+
+    def post(p):
         with tema.cartao():
-            st.markdown(f"**{p['titulo']}**" + (" 🧪 exemplo fictício" if p.get("exemplo") else ""))
-            st.caption(f"{p['tipo']} • de {p['autor']} • área: {p['area']} • procura: {p['procura']}")
+            st.markdown(f"### {p['titulo']}" + (" 🧪" if p.get("exemplo") else ""))
+            st.caption(f"{p['tipo']} • de {p['autor']} • área: {p['area']} • procura: {p['procura']}" + (" • exemplo fictício" if p.get("exemplo") else ""))
             st.write(p["descricao"])
             st.caption(f"📍 {p['formato']} • {p['cidade']}/{p['estado']} • 🕒 {p['disponibilidade']}")
             st.caption(f"Contato: {p['contato']}" if p.get("contato") else "Sem contato público. Neste protótipo ainda não há mensagens internas.")
@@ -513,27 +564,32 @@ def aba_comunidade():
                 b1, b2 = st.columns(2)
                 b1.button("Denunciar", key=f"den_{p['id']}", on_click=_denunciar, args=(p["id"], k))
                 b2.button(f"Bloquear {p['autor']}", key=f"blo_{p['id']}", on_click=_bloquear, args=(p["autor"],))
+
+    grade(posts, post, 2)
     if ss.denuncias:
         st.download_button("⬇️ Baixar denúncias registradas", json.dumps(ss.denuncias, ensure_ascii=False, indent=2), "denuncias.json", "application/json")
     if ss.bloqueados:
         st.caption("Bloqueados nesta sessão: " + ", ".join(ss.bloqueados))
-    st.markdown("### Publicar um pedido de colaboração")
+    st.subheader("Publicar um pedido de colaboração")
     with st.form("form_post", clear_on_submit=True):
-        tp = st.selectbox("Tipo", co.TIPOS, key="po_tipo")
-        titulo = st.text_input("Título", key="po_titulo")
-        desc = st.text_area("Descrição", key="po_desc")
-        a1, a2 = st.columns(2)
-        meu_area = a1.selectbox("Sua área", op.AREAS, index=_i(op.AREAS, ss.perfil.get("area")), key="po_area")
-        procura = a2.selectbox("Você procura", ["Qualquer área"] + op.AREAS, key="po_procura")
-        b1, b2 = st.columns(2)
-        uf_p = b1.selectbox("Estado do projeto", op.ESTADOS, index=_i(op.ESTADOS, ss.perfil.get("estado", "SP")), key="po_uf")
-        cid = b2.text_input("Cidade do projeto", key="po_cidade")
-        d1, d2 = st.columns(2)
-        fm = d1.selectbox("Formato do projeto", co.FORMATOS, key="po_formato")
-        dp = d2.selectbox("Sua disponibilidade", co.DISPONIBILIDADES, key="po_disp")
-        autor = st.text_input("Nome público (use apelido, não dados completos)", value=ss.perfil.get("apelido", ""), key="po_autor")
-        contato = st.text_input("Contato público (opcional; qualquer pessoa verá)", key="po_contato")
-        ok = st.form_submit_button("Publicar")
+        r1, r2 = st.columns(2)
+        with r1:
+            tp = st.selectbox("Tipo", co.TIPOS, key="po_tipo")
+            titulo = st.text_input("Título", key="po_titulo")
+            desc = st.text_area("Descrição", key="po_desc")
+            autor = st.text_input("Nome público (use apelido, não dados completos)", value=ss.perfil.get("apelido", ""), key="po_autor")
+            contato = st.text_input("Contato público (opcional; qualquer pessoa verá)", key="po_contato")
+        with r2:
+            a1, a2 = st.columns(2)
+            meu_area = a1.selectbox("Sua área", op.AREAS, index=_i(op.AREAS, ss.perfil.get("area")), key="po_area")
+            procura = a2.selectbox("Você procura", ["Qualquer área"] + op.AREAS, key="po_procura")
+            b1, b2 = st.columns(2)
+            uf_p = b1.selectbox("Estado do projeto", op.ESTADOS, index=_i(op.ESTADOS, ss.perfil.get("estado", "SP")), key="po_uf")
+            cid = b2.text_input("Cidade do projeto", key="po_cidade")
+            d1, d2 = st.columns(2)
+            fm = d1.selectbox("Formato do projeto", co.FORMATOS, key="po_formato")
+            dp = d2.selectbox("Sua disponibilidade", co.DISPONIBILIDADES, key="po_disp")
+        ok = st.form_submit_button("Publicar", type="primary")
     if ok:
         if not (titulo.strip() and desc.strip() and autor.strip()):
             st.error("Preencha título, descrição e nome público.")
